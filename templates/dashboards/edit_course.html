@@ -1,0 +1,267 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <a href="{{ url_for('main.teacher_courses') }}" class="mr-4 hover:text-gray-300 flex items-center">
+        <i class="iconify text-[#1a47ef] text-3xl" data-icon="ic:twotone-logout"></i>
+    </a>
+    <h1 class="text-2xl font-bold font-sans mb-4 text-center">Edit Course: {{ course.title }}</h1>
+    
+    <!-- Modified form to handle file uploads, already has the correct enctype -->
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-4">
+            <label for="title" class="block text-gray-700 font-bold mb-2">Course Title</label>
+            <input type="text" id="title" name="title"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    value="{{ course.title }}" required>
+        </div>
+        <hr class="my-4">
+        <div class="mb-4">
+            <label for="description" class="block text-gray-700 font-bold mb-2">Description</label>
+            <!-- This textarea will be replaced by the TinyMCE editor and pre-populated -->
+            <textarea id="description" name="description" rows="3"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{ course.description | safe }}</textarea>
+        </div>
+        <hr class="my-4">
+        <div class="mb-4">
+            <label for="content" class="block text-gray-700 font-bold mb-2">Course Content</label>
+            <!-- This textarea will also be replaced by the TinyMCE editor and pre-populated -->
+            <textarea id="content" name="content" rows="10"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="Add your course content here. You can use Markdown for formatting.">{{ course.content | safe }}</textarea>
+        </div>
+        <hr class="my-4">
+        <!-- NEW: File Upload Field for course material -->
+        <div class="mb-6">
+            <label for="file" class="block text-gray-700 text-sm font-bold mb-2">Update Course File (Optional, leave blank to keep current)</label>
+            <input type="file" id="file" name="file" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% if course.file_path %}
+                <p class="text-sm text-gray-500 mt-2 justify-center">
+                    Current file:
+                    <a href="{{ url_for('main.download_course_file', filename=course.file_path) }}" 
+                        class="inline-flex items-center text-blue-500 hover:text-blue-700"
+                        title="Download File"
+                        download>
+                        <span class="iconify text-[#1a47ef] text-3xl" data-icon="mdi:download"></span>
+                    </a>
+                </p>
+            {% endif %}
+        </div>
+
+
+        <button type="submit"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Save Changes
+        </button>
+    </form>
+</div>
+
+<!-- TinyMCE CDN and initialization script -->
+<script src="https://cdn.tiny.cloud/1/4um2cjxhribn8kvplgsw1nwx5fvhbi3vydpk5nthap59vjlo/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+<script>
+    // tinymce.init({
+    //     selector: '#description, #content',
+    //     plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak code codesample emoticons media searchreplace table visualblocks wordcount',
+    //     toolbar_mode: 'floating',
+    //     toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help | link image media code',
+    //     height: 500,
+    //     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+    //     // New callback to handle inline file uploads
+    //     file_picker_callback: function(cb, value, meta) {
+    //         var input = document.createElement('input');
+    //         input.setAttribute('type', 'file');
+    //         input.setAttribute('accept', 'image/*, video/*');
+
+    //         input.onchange = function() {
+    //             var file = this.files[0];
+    //             var reader = new FileReader();
+    //             reader.onload = function () {
+    //                 var id = 'blobid' + (new Date()).getTime();
+    //                 var blobCache = tinymce.activeEditor.editorUpload.blobCache;
+    //                 var base64 = reader.result.split(',')[1];
+    //                 var blobInfo = blobCache.create(id, file, base64);
+    //                 blobCache.add(blobInfo);
+
+    //                 /* call the callback and populate the field with the file's URL */
+    //                 cb(blobInfo.blobUri(), { title: file.name });
+    //             };
+    //             reader.readAsDataURL(file);
+    //         };
+
+    //         input.click();
+    //     }
+    // });
+</script>
+
+<script>
+    // tinymce.init({
+    //     selector: '#description, #content',
+    //     plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak code codesample emoticons media searchreplace table visualblocks wordcount',
+    //     toolbar_mode: 'floating',
+    //     toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help | link image media code',
+    //     height: 300,
+    //     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+        
+    //     images_upload_url: "{{ url_for('main.upload_file_tinymce') }}",
+    //     media_upload_url: "{{ url_for('main.upload_file_tinymce') }}",
+    //     automatic_uploads: true,
+
+    //     file_picker_callback: function (callback, value, meta) {
+    //         let input = document.createElement('input');
+    //         input.setAttribute('type', 'file');
+
+    //         if (meta.filetype === 'image') {
+    //             input.setAttribute('accept', 'image/*');
+    //         } else if (meta.filetype === 'media') {
+    //             input.setAttribute('accept', 'video/*');
+    //         }
+
+    //         input.onchange = function () {
+    //             let file = this.files[0];
+    //             let formData = new FormData();
+    //             formData.append('file', file, file.name);
+
+    //             fetch("{{ url_for('main.upload_file_tinymce') }}", {
+    //                 method: 'POST',
+    //                 body: formData
+    //             }).then(response => {
+    //                 if (!response.ok) {
+    //                     throw new Error('HTTP Error: ' + response.status);
+    //                 }
+    //                 return response.json();
+    //             }).then(data => {
+    //                 if (data.error) {
+    //                     alert('Error uploading file: ' + data.error);
+    //                     return;
+    //                 }
+    //                 callback(data.location);
+    //             }).catch(error => {
+    //                 alert('File upload failed: ' + error.message);
+    //             });
+    //         };
+
+    //         input.click();
+    //     },
+
+    //     images_upload_handler: function (blobInfo, progress) {
+    //         return new Promise((resolve, reject) => {
+    //             const formData = new FormData();
+    //             formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+    //             fetch("{{ url_for('main.upload_file_tinymce') }}", {
+    //                 method: 'POST',
+    //                 body: formData
+    //             }).then(response => {
+    //                 if (!response.ok) {
+    //                     throw new Error('HTTP Error: ' + response.status);
+    //                 }
+    //                 return response.json();
+    //             }).then(data => {
+    //                 if (data.error) {
+    //                     reject('Error: ' + data.error);
+    //                     return;
+    //                 }
+    //                 resolve(data.location);
+    //             }).catch(error => {
+    //                 reject('Image upload failed: ' + error.message);
+    //             });
+    //         });
+    //     }
+    // });
+</script>
+<script>
+    tinymce.init({
+        selector: '#description, #content',
+        plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak code codesample emoticons media searchreplace table visualblocks wordcount',
+        toolbar_mode: 'floating',
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help | link image media code',
+        height: 300,
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+        
+        images_upload_url: "{{ url_for('main.upload_file_tinymce') }}",
+        media_upload_url: "{{ url_for('main.upload_file_tinymce') }}",
+        automatic_uploads: true,
+
+        file_picker_callback: function (callback, value, meta) {
+            let input = document.createElement('input');
+            input.setAttribute('type', 'file');
+
+            if (meta.filetype === 'image') {
+                input.setAttribute('accept', 'image/*');
+            } else if (meta.filetype === 'media') {
+                input.setAttribute('accept', 'video/*');
+            }
+
+            input.onchange = function () {
+                let file = this.files[0];
+                let formData = new FormData();
+                formData.append('file', file, file.name);
+
+                fetch("{{ url_for('main.upload_file_tinymce') }}", {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP Error: ' + response.status);
+                    }
+                    return response.json();
+                }).then(data => {
+                    if (data.error) {
+                        alert('Error uploading file: ' + data.error);
+                        return;
+                    }
+                    // This is the key change: we now pass a second object to the callback
+                    // with the `poster` property, which TinyMCE uses for the thumbnail.
+                    callback(data.location, { poster: data.poster });
+                }).catch(error => {
+                    alert('File upload failed: ' + error.message);
+                });
+            };
+
+            input.click();
+        }
+    });
+</script>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{#
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Edit Course: {{ course.title }}</h1>
+    <form method="POST">
+        <div class="mb-4">
+            <label for="title" class="block text-gray-700 font-bold mb-2">Course Title</label>
+            <input type="text" id="title" name="title"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    value="{{ course.title }}" required>
+        </div>
+        <div class="mb-4">
+            <label for="description" class="block text-gray-700 font-bold mb-2">Description</label>
+            <textarea id="description" name="description" rows="3"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{ course.description }}</textarea>
+        </div>
+        <div class="mb-4">
+            <label for="content" class="block text-gray-700 font-bold mb-2">Course Content</label>
+            <textarea id="content" name="content" rows="10"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="Add your course content here. You can use Markdown for formatting.">{{ course.content }}</textarea>
+        </div>
+        <button type="submit"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Save Changes
+        </button>
+    </form>
+</div>
+{% endblock %}
+#}

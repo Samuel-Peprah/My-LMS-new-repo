@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My LMS - {{ title }}</title>
+    <!-- Tailwind CSS CDN for quick styling -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@iconify/iconify@1.14.2/dist/iconify.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@iconify/iconify@1.14.2/dist/iconify.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@iconify/tailwind@1.0.0/dist/iconify-tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/fontawesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/solid.min.css">
+    <link rel="icon" type="image/png" href="/static/icons/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/static/icons/favicon.svg" />
+    <link rel="shortcut icon" href="/static/icons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="My LMS" />
+    <link rel="manifest" href="/static/icons/site.webmanifest" />
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+    <nav class="bg-gray-800 p-4 text-white shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{{ url_for('main.index') }}" class="text-xl font-bold flex items-center">
+                <i class="iconify text-[#1a47ef] text-3xl mr-2" data-icon="ic:twotone-school"></i>
+                My LMS
+            </a>
+
+            <div>
+                {% if current_user.is_authenticated %}
+                    <div class="flex items-center space-x-4">
+                        <!-- Logout Link -->
+                        <a href="{{ url_for('auth.logout') }}" class="hover:text-gray-300 flex items-center">
+                            <i class="iconify text-[#1a47ef] text-2xl mr-2" data-icon="ic:twotone-logout"></i>
+                            Logout
+                        </a>
+                        <!-- Profile Link with Text and Image -->
+                        <a href="{{ url_for('main.user_profile', user_id=current_user.id) }}" class="hover:text-gray-300 flex items-center">
+                            <span class="hidden md:inline mr-2">{{ current_user.username }}</span>
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl font-bold overflow-hidden">
+                                <img src="https://placehold.co/50x50/e2e8f0/64748b?text={{ current_user.username[0] | upper }}" alt="Profile Picture" class="object-cover w-full h-full">
+                            </div>
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="mr-4 hover:text-gray-300 flex items-center">
+                        <i class="iconify text-[#1a47ef] text-2xl mr-2" data-icon="ic:twotone-login"></i>
+                            Sign in
+                    </a>
+                    <br>
+                    <a href="{{ url_for('auth.register') }}" class="hover:text-gray-300 flex items-center">
+                        <i class="iconify text-[#1a47ef] text-2xl mr-2" data-icon="ic:twotone-app-registration"></i>
+                            Sign Up
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto mt-3 p-4 bg-gray-100">
+        {# Flash messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="p-3 mb-3 rounded-md text-sm {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'info' %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="loading-overlay"
+        class="hidden fixed inset-0 bg-white/20 flex items-center justify-center z-[9999] transition-opacity duration-300">
+
+        <!-- Spinner Container -->
+        <div class="relative w-24 h-24 flex items-center justify-center">
+
+            <!-- Rotating Ring -->
+            <div class="absolute inset-0 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+
+            <!-- Logo in Center -->
+            <i class="iconify text-6xl text-blue-600 animate-pulse" data-icon="ic:twotone-school"></i>
+
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white p-4 mt-8 text-center">
+        <p>&copy; {{ current_year }} My LMS. All rights reserved.</p>
+    </footer>
+
+    <script src="https://code.iconify.design/1/1.0.7/iconify.min.js"></script>
+    <script src="https://kit.fontawesome.com/e990a97f92.js" crossorigin="anonymous"></script>
+
+    <script>
+        function togglePasswordVisibility(button) {
+            const input = button.parentElement.querySelector('input');
+            const icon = button.querySelector('iconify-icon');
+    
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('icon', 'mdi:eye-off-outline');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('icon', 'mdi:eye-outline');
+            }
+        }
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const overlay = document.getElementById("loading-overlay");
+
+            // Function to show loader
+            function showLoader(callback) {
+                overlay.classList.remove("hidden");
+                overlay.classList.add("opacity-100");
+
+                setTimeout(() => {
+                    overlay.classList.add("hidden");
+                    overlay.classList.remove("opacity-100");
+                    if (callback) callback();
+                }, 1500); // 1.5s delay
+            }
+
+            // For ALL buttons
+            document.querySelectorAll("button").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    if (btn.type === "submit" && btn.closest("form")) {
+                        // Stop immediate submit
+                        e.preventDefault();
+                        showLoader(() => btn.closest("form").submit());
+                    } else {
+                        // Just show loader
+                        showLoader();
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
+

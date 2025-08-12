@@ -1,0 +1,51 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-4">Select a Course to Create a Lesson</h1>
+    <a href="{{ url_for('main.teacher_dashboard') }}" class="text-blue-500 hover:underline mb-6 inline-block">&larr; Back to Dashboard</a>
+
+    <!-- This container makes the table horizontally scrollable on smaller screens -->
+    <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Courses
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for course in courses %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">
+                            {{ course.title | safe }}
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            {{ course.description | safe }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex space-x-2">
+                            <a href="{{ url_for('main.discussion_board', course_id=course.id) }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full text-sm">
+                                Create Discussion
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                        You have not created any courses yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

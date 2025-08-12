@@ -1,0 +1,57 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <a href="{{ url_for('main.admin_dashboard') }}">
+        <i class="iconify text-[#1a47ef] text-3xl" data-icon="ic:twotone-logout"></i>
+    </a>
+    <h1 class="text-2xl font-sans font-bold mb-1">Manage Users</h1>
+
+
+    <!-- Table to Display Existing Users -->
+    <div class="overflow-x-auto mt-2">
+        <table class="min-w-full bg-white rounded-lg shadow-md">
+            <thead>
+                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left">ID</th>
+                    <th class="py-3 px-6 text-left">Username</th>
+                    <th class="py-3 px-6 text-left">Email</th>
+                    <th class="py-3 px-6 text-left">Current Role</th>
+                    <th class="py-3 px-6 text-left">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm font-light">
+                {% for user in users %}
+                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ user.id }}</td>
+                    <td class="py-3 px-6 text-left">{{ user.username }}</td>
+                    <td class="py-3 px-6 text-left">{{ user.email }}</td>
+                    <td class="py-3 px-6 text-left">{{ user.role }}</td>
+                    <td class="py-3 px-6 text-left">
+                        <form method="POST" class="flex items-center">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <label for="new_role_{{ user.id }}" class="sr-only">Change Role</label>
+                            <select id="new_role_{{ user.id }}" name="new_role"
+                                    class="mr-2 shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="student" {% if user.role == 'student' %}selected{% endif %}>student</option>
+                                <option value="teacher" {% if user.role == 'teacher' %}selected{% endif %}>teacher</option>
+                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
+                            </select>
+                            <button type="submit"
+                                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                Update
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr class="border-b border-gray-200">
+                    <td colspan="5" class="py-3 px-6 text-center">No users found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

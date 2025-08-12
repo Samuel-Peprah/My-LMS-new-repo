@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind base;
+@import "@iconify/tailwind";
+@tailwind typography;
+@layer base {
+  body {
+    font-family: 'San Francisco', sans-serif;
+  }
+}

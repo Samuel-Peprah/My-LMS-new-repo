@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+    <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center flex justify-center">
+            <i class="iconify text-[#1a47ef] text-3xl mr-2" data-icon="ic:twotone-account-circle"></i>
+                Sign In
+        </h2>
+
+
+        <form action="" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="mb-4">
+                {{ form.username.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                {{ form.username(size=32, class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline", placeholder="Eg: Samuel Pep..") }}
+                {% for error in form.username.errors %}
+                    <span class="text-red-500 text-xs italic">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="mb-6 relative">
+                {{ form.password.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                <div class="relative">
+                    {{ form.password(size=32, class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-10", placeholder="Eg: samue•••••") }}
+                        <button type="button" onclick="togglePasswordVisibility(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-600 hover:text-gray-700">
+                            <i class="iconify text-[#1a47ef] text-3xl" data-icon="mdi:eye-outline"></i>
+                        </button>
+                </div>
+                {% for error in form.password.errors %}
+                    <span class="text-red-500 text-xs italic">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="flex items-center justify-between">
+                {{ form.submit(class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
+            </div>
+        </form>
+        <p class="text-center text-gray-600 text-sm mt-4">New User? <a href="{{ url_for('auth.register') }}" class="text-blue-500 hover:underline">Register Here</a></p>
+    </div>
+
+    <script>
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON') {
+                document.getElementById('loading-overlay').classList.remove('hidden');
+                setTimeout(function() {
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                }, 2000); // 2 seconds
+            }
+        });
+    </script>
+{% endblock %}

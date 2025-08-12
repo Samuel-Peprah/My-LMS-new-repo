@@ -1,0 +1,132 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+
+<div class="container mx-auto p-6 md:p-6 bg-gray-100 min-h-screen">
+    <div class="flex items-center justify-between mb-4"></div>
+    {% if current_user.is_authenticated and current_user.role == 'student' %}
+        <a href="{{ url_for('main.student_dashboard') }}" class="flex items-center text-blue-600 hover:text-blue-800 transition duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back to Dashboard
+        </a>
+    {% elif current_user.is_authenticated and current_user.role == 'teacher' %}
+        <a href="{{ url_for('main.teacher_dashboard') }}" class="flex items-center text-blue-600 hover:text-blue-800 transition duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back to Dashboard
+        </a>
+    {% elif current_user.is_authenticated and current_user.role == 'admin' %}
+        <a href="{{ url_for('main.admin_dashboard') }}" class="flex items-center text-blue-600 hover:text-blue-800 transition duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back to Dashboard
+        </a>
+    {% endif %}
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4 text-center">My Academic Calendar</h1>
+
+    <div id='calendar' class="bg-white p-1 sm:p-4 md:p-4 rounded-lg shadow-xl"></div>
+</div>
+
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<!-- FullCalendar JavaScript -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js'></script>
+
+<style>
+    /* Custom styles to make FullCalendar look better and be more responsive */
+    .fc-toolbar-title {
+        font-size: 1.5rem !important; /* Larger title */
+        font-weight: 700 !important;
+        color: #1f2937; /* Dark gray */
+    }
+
+    .fc-button-primary {
+        background-color: #4f46e5 !important; /* Indigo for buttons */
+        border-color: #4f46e5 !important;
+        font-weight: 600 !important;
+        border-radius: 0.5rem !important; /* Rounded corners */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .fc-button-primary:hover {
+        background-color: #4338ca !important;
+    }
+
+    .fc-button-group {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem; /* Space between buttons */
+    }
+    
+    /* Responsive toolbar layout for small screens */
+    .fc .fc-toolbar.fc-header-toolbar {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .fc-toolbar-chunk {
+        margin-bottom: 0.5rem;
+    }
+
+    /* Event styling with rounded corners and shadow */
+    .fc-event {
+        border-radius: 0.25rem !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        padding: 2px 4px;
+        font-size: 0.8rem;
+    }
+    
+    /* Make events clickable with pointer cursor */
+    .fc-event-main:hover {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            // Responsive toolbar configuration
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            
+            // Custom button text
+            buttonText: {
+                today: 'Today',
+                month: 'Month',
+                week: 'Week',
+                day: 'Day'
+            },
+            
+            editable: false,
+            events: '/api/calendar/events', // This tells FullCalendar where to fetch event data
+            eventClick: function(info) {
+                // Log the event URL to the console to check if it's being clicked
+                console.log('Event clicked, URL:', info.event.url);
+                if (info.event.url) {
+                    window.location.href = info.event.url;
+                }
+            },
+            eventDidMount: function(info) {
+                // Check if the event has a description property
+                if (info.event.extendedProps.description) {
+                    // Set the tooltip title to the description
+                    info.el.title = info.event.extendedProps.description;
+                }
+            }
+        });
+        calendar.render();
+    });
+</script>
+{% endblock %}

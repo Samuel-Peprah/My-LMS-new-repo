@@ -1,0 +1,42 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <a href="{{ url_for('main.teacher_courses') }}">
+        <i class="iconify text-[#1a47ef] text-3xl" data-icon="ic:twotone-logout"></i>
+    </a>
+    <h1 class="text-1xl font-bold mb-3 flex-grow font-sans text-center mt-2">Students in {{ course.title }}</h1>
+
+    {% if students %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white rounded-lg shadow-md">
+            <thead>
+                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left">Student Name</th>
+                    <th class="py-3 px-6 text-left">Email</th>
+                    <th class="py-3 px-6 text-left">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm font-light">
+                {% for student in students %}
+                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ student.username }}</td>
+                    <td class="py-3 px-6 text-left">{{ student.email }}</td>
+                    <td class="py-3 px-6 text-left">
+                        <form method="POST" action="{{ url_for('main.remove_student', course_id=course.id, student_id=student.id) }}" onsubmit="return confirm('Are you sure you want to remove {{ student.username }} from this course?');">
+                            <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs focus:outline-none focus:shadow-outline">
+                                Remove
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-gray-700 mt-4">No students have enrolled in this course yet.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

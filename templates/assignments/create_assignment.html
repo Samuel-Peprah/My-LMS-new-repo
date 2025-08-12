@@ -1,0 +1,123 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-5">
+    <h1 class="text-2xl font-bold mb-4">New Assignment: "{{ course.title }}"</h1>
+    <a href="{{ url_for('main.select_course_for_assignment', course_id=course.id) }}" class="text-blue-500 hover:underline mb-6 inline-block">&larr; Back to Assignments</a>
+
+    <div class="bg-gray-100 p-5 rounded-lg shadow-md">
+        <form method="POST" action="{{ url_for('main.create_assignment', course_id=course.id) }}" enctype="multipart/form-data">
+            <div class="mb-4">
+                <label for="title" class="block text-gray-700 text-sm font-bold mb-2">Assignment Title</label>
+                <input type="text" id="title" name="title" placeholder="e.g., Fundamentals of Basic Anatomy" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-4">
+                <label for="description" class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                <textarea id="description" name="description" rows="5" placeholder="...Type Assignment here or a brief description of the assignment..." class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="file" class="block text-gray-700 text-sm font-bold mb-2">Upload Assignment File (Optional)</label>
+                <input type="file" id="file" name="file" placeholder="Choose file..." class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div class="mb-6">
+                <label for="due_date" class="block text-gray-700 text-sm font-bold mb-2">Due Date</label>
+                <input type="datetime-local" id="due_date" name="due_date" placeholder="Deadline" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                <p class="text-gray-500 text-xs mt-1">Set Deadline</p>
+            </div>
+            <!-- NEW FIELD ADDED HERE -->
+            <div class="mb-6">
+                <label for="max_submissions" class="block text-gray-700 text-sm font-bold mb-2">Maximum Submissions</label>
+                <input type="number" id="max_submissions" name="max_submissions" value="1" min="1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <p class="text-gray-500 text-xs mt-1">Set the maximum number of times a student can submit this assignment.</p>
+            </div>
+            <div class="flex items-center justify-between">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Create Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.tiny.cloud/1/4um2cjxhribn8kvplgsw1nwx5fvhbi3vydpk5nthap59vjlo/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+<script>
+    tinymce.init({
+        // Target the description textarea
+        selector: '#description',
+        plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak code codesample emoticons media searchreplace table visualblocks wordcount',
+        toolbar_mode: 'floating',
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help | link image media code',
+        height: 300,
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+        
+        // This is the key change: these URLs point to our new Flask route
+        images_upload_url: "{{ url_for('main.upload_assignment_file') }}",
+        media_upload_url: "{{ url_for('main.upload_assignment_file') }}",
+        automatic_uploads: true,
+
+        file_picker_callback: function (callback, value, meta) {
+            let input = document.createElement('input');
+            input.setAttribute('type', 'file');
+
+            if (meta.filetype === 'image') {
+                input.setAttribute('accept', 'image/*');
+            } else if (meta.filetype === 'media') {
+                input.setAttribute('accept', 'video/*');
+            }
+
+            input.onchange = function () {
+                let file = this.files[0];
+                let formData = new FormData();
+                formData.append('file', file, file.name);
+
+                fetch("{{ url_for('main.upload_assignment_file') }}", {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP Error: ' + response.status);
+                    }
+                    return response.json();
+                }).then(data => {
+                    if (data.error) {
+                        // Use a custom modal or alert to show the error
+                        alert('Error uploading file: ' + data.error);
+                        return;
+                    }
+                    // Pass the video location and the thumbnail (poster) back to TinyMCE
+                    callback(data.location, { poster: data.poster });
+                }).catch(error => {
+                    alert('File upload failed: ' + error.message);
+                });
+            };
+
+            input.click();
+        },
+        
+        images_upload_handler: function (blobInfo, progress) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                fetch("{{ url_for('main.upload_assignment_file') }}", {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP Error: ' + response.status);
+                    }
+                    return response.json();
+                }).then(data => {
+                    if (data.error) {
+                        reject('Error: ' + data.error);
+                        return;
+                    }
+                    resolve(data.location);
+                }).catch(error => {
+                    reject('Image upload failed: ' + error.message);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

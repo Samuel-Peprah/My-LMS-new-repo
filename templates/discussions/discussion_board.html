@@ -1,0 +1,133 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    {% if current_user.is_authenticated and current_user.role == 'student' %}
+        <a href="{{ url_for('main.student_dashboard') }}" class="text-blue-500 hover:underline mb-6 inline-block">&larr; Back to Course</a>
+    {% elif current_user.is_authenticated and current_user.role == 'teacher' %}
+        <a href="{{ url_for('main.teacher_dashboard') }}" class="text-blue-500 hover:underline mb-6 inline-block">&larr; Back to Course</a>
+    {% endif %}
+
+    <h1 class="text-2xl font-bold mb-2">Discussion Board: {{ course.title | safe }}</h1>
+    <p class="text-xl text-gray-600 mb-4">{{ course.description | safe }}</p>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8 bg-gray-100">
+        <h2 class="text-2xl font-bold mb-4 bg-gray-100">Start a Discussion</h2>
+        <form id="new-post-form" method="POST" action="{{ url_for('main.create_discussion_post', course_id=course.id) }}">
+            <div class="mb-4">
+                <label for="post-title" class="block text-gray-700 text-sm font-bold mb-2">Topic Title</label>
+                <input type="text" id="post-title" name="post-title" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-4 ">
+                <label for="post-content" class="block text-gray-700 text-sm font-bold mb-2">Content</label>
+                <textarea id="post-content" name="post-content" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+            </div>
+            <div class="flex items-center justify-end">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Post Topic
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-8 rounded-lg shadow-md mb-8 bg-gray-100">
+        <h2 class="text-2xl font-bold mb-4 bg-gray-100">Current Discussions</h2>
+        {% if discussion_posts %}
+            <div class="space-y-4">
+            {% for post in discussion_posts %}
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+                    <a href="{{ url_for('main.view_discussion_post', post_id=post.id) }}" class="text-lg font-bold text-blue-600 hover:underline">
+                        {{ post.title }}
+                    </a>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Posted by {{ post.author.username }} ({{ post.author.role }}) on {{ post.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                    </p>
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-gray-100 p-4 rounded-lg text-gray-800">
+                No discussion topics have been created yet.<span class="text-blue-800 text-lg font-sans italic"> Be the first to post!</span>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.tiny.cloud/1/4um2cjxhribn8kvplgsw1nwx5fvhbi3vydpk5nthap59vjlo/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+<script>
+    tinymce.init({
+        selector: '#post-content',
+        plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak code codesample emoticons media searchreplace table visualblocks wordcount fullscreen',
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help | link image media code | fullscreen',
+        height: 300,
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+        
+        // Key change for image/media uploads
+        images_upload_url: "{{ url_for('main.upload_assignment_file') }}",
+        media_upload_url: "{{ url_for('main.upload_assignment_file') }}",
+        automatic_uploads: true,
+
+        file_picker_callback: function (callback, value, meta) {
+            let input = document.createElement('input');
+            input.setAttribute('type', 'file');
+
+            if (meta.filetype === 'image') {
+                input.setAttribute('accept', 'image/*');
+            } else if (meta.filetype === 'media') {
+                input.setAttribute('accept', 'video/*');
+            }
+
+            input.onchange = function () {
+                let file = this.files[0];
+                let formData = new FormData();
+                formData.append('file', file, file.name);
+
+                fetch("{{ url_for('main.upload_assignment_file') }}", {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP Error: ' + response.status);
+                    }
+                    return response.json();
+                }).then(data => {
+                    if (data.error) {
+                        alert('Error uploading file: ' + data.error);
+                        return;
+                    }
+                    callback(data.location, { poster: data.poster });
+                }).catch(error => {
+                    alert('File upload failed: ' + error.message);
+                });
+            };
+
+            input.click();
+        },
+        
+        images_upload_handler: function (blobInfo, progress) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                fetch("{{ url_for('main.upload_assignment_file') }}", {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP Error: ' + response.status);
+                    }
+                    return response.json();
+                }).then(data => {
+                    if (data.error) {
+                        reject('Error: ' + data.error);
+                        return;
+                    }
+                    resolve(data.location);
+                }).catch(error => {
+                    reject('Image upload failed: ' + error.message);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

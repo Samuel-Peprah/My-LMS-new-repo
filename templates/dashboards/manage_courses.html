@@ -1,0 +1,190 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <a href="{{ url_for('main.dashboard') }}">
+        <i class="iconify text-[#1a47ef] text-3xl" data-icon="ic:twotone-logout"></i>
+    </a>
+    <h1 class="text-2xl font-sans font-bold mb-2">Manage Courses</h1>
+
+    <!-- Form to Add a New Course -->
+    <div class="bg-gray-100 p-4 rounded-lg shadow-md mb-4">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="iconify text-[#1a47ef] text-2xl mr-2" data-icon="ic:twotone-add-box"></i>
+                Add a New Course
+        </h2>
+
+        <!-- Form to handle file uploads, already has the correct enctype -->
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-4">
+                <label for="title" class="block text-gray-700 font-bold mb-2">Course Title</label>
+                <input type="text" id="title" name="title"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="e.g., Introduction to Python" required>
+            </div>
+            <div class="mb-4">
+                <label for="description" class="block text-gray-700 font-bold mb-2">Description</label>
+                <!-- This textarea will be replaced by the TinyMCE editor -->
+                <textarea id="description" name="description" rows="4"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            placeholder="A brief description of the course..."></textarea>
+            </div>
+            
+            <!-- 'content' field for the main course material -->
+            <div class="mb-4">
+                <label for="content" class="block text-gray-700 font-bold mb-2">Content</label>
+                <!-- This textarea will also be replaced by the TinyMCE editor -->
+                <textarea id="content" name="content" rows="4"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            placeholder="Course content goes here..."></textarea>
+            </div>
+
+            <!-- NEW: File Upload Field for course material -->
+            <div class="mb-6">
+                <label for="file" class="block text-gray-700 text-sm font-bold mb-2">Upload Course File (Optional)</label>
+                <input type="file" id="file" name="file" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+
+            <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Create Course
+            </button>
+        </form>
+    </div>
+    <hr class="border-blue-500 my-6">
+
+    <!-- Table to Display Existing Courses -->
+    <h2 class="text-xl font-sans font-semibold mb-4">Existing Courses</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white rounded-lg shadow-md">
+            <thead>
+                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left">ID</th>
+                    <th class="py-3 px-6 text-left">Title</th>
+                    <th class="py-3 px-6 text-left">Teacher</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm font-light">
+                {% for course in courses %}
+                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ course.id }}</td>
+                    <td class="py-3 px-6 text-left">{{ course.title }}</td>
+                    <td class="py-3 px-6 text-left">{{ course.teacher.username }}</td>
+                </tr>
+                {% else %}
+                <tr class="border-b border-gray-200">
+                    <td colspan="3" class="py-3 px-6 text-center">No courses found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- TinyMCE CDN and initialization script -->
+<script src="https://cdn.tiny.cloud/1/4um2cjxhribn8kvplgsw1nwx5fvhbi3vydpk5nthap59vjlo/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+<script>
+    tinymce.init({
+        selector: '#description, #content',
+        plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak code codesample emoticons media searchreplace table visualblocks wordcount',
+        toolbar_mode: 'floating',
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help | link image media code',
+        height: 300,
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+        // New callback to handle inline file uploads
+        file_picker_callback: function(cb, value, meta) {
+            var input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*, video/*');
+
+            input.onchange = function() {
+                var file = this.files[0];
+                var reader = new FileReader();
+                reader.onload = function () {
+                    var id = 'blobid' + (new Date()).getTime();
+                    var blobCache = tinymce.activeEditor.editorUpload.blobCache;
+                    var base64 = reader.result.split(',')[1];
+                    var blobInfo = blobCache.create(id, file, base64);
+                    blobCache.add(blobInfo);
+
+                    /* call the callback and populate the field with the file's URL */
+                    cb(blobInfo.blobUri(), { title: file.name });
+                };
+                reader.readAsDataURL(file);
+            };
+
+            input.click();
+        }
+    });
+</script>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+{#
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Manage Courses</h1> -->
+
+    <!-- Form to Add a New Course -->
+    <div class="bg-gray-100 p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-semibold mb-4">Add a New Course</h2>
+        <form method="POST">
+            <div class="mb-4">
+                <label for="title" class="block text-gray-700 font-bold mb-2">Course Title</label>
+                <input type="text" id="title" name="title"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="e.g., Introduction to Python" required>
+            </div>
+            <div class="mb-4">
+                <label for="description" class="block text-gray-700 font-bold mb-2">Description</label>
+                <textarea id="description" name="description" rows="4"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            placeholder="A brief description of the course..."></textarea>
+            </div>
+            <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Create Course
+            </button>
+        </form>
+    </div>
+
+    <!-- Table to Display Existing Courses -->
+    <h2 class="text-xl font-semibold mb-4">Existing Courses</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white rounded-lg shadow-md">
+            <thead>
+                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left">ID</th>
+                    <th class="py-3 px-6 text-left">Title</th>
+                    <th class="py-3 px-6 text-left">Teacher</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm font-light">
+                {% for course in courses %}
+                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ course.id }}</td>
+                    <td class="py-3 px-6 text-left">{{ course.title }}</td>
+                    <td class="py-3 px-6 text-left">{{ course.teacher.username }}</td>
+                </tr>
+                {% else %}
+                <tr class="border-b border-gray-200">
+                    <td colspan="3" class="py-3 px-6 text-center">No courses found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+#}

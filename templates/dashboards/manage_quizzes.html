@@ -1,0 +1,372 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <a href="{{ url_for('main.teacher_courses') }}" class="text-blue-500 hover:text-2xl mb-6 inline-block flex items-center">
+        <i class="iconify text-[#1a47ef] text-3xl" data-icon="ic:twotone-logout"></i>
+        Back to Courses
+    </a>
+    <h1 class="text-2xl font-bold mb-3 font-sans flex-grow text-center mt-2">{{ course.title }} Quiz</h1>
+
+    <!-- Create New Quiz Section -->
+    <div class="bg-gray-100 p-4 rounded-lg shadow-md mb-4">
+        <h2 class="text-2xl font-semibold mb-4 flex items-center">
+            <i class="iconify text-3xl mr-2" data-icon="ic:twotone-library-add"></i>
+            Create New Quiz
+        </h2>
+        <form id="quizForm"> <!-- Removed the POST method and action URL here -->
+            <div class="mb-4">
+                <label for="quiz_title" class="block text-gray-700 font-bold mb-2">Quiz Title</label>
+                <input type="text" id="quiz_title" name="quiz_title"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        required>
+            </div>
+
+            <hr class="my-3">
+            
+            <div id="questionsContainer" class="space-y-6">
+                <!-- Question fields will be added here by JavaScript -->
+            </div>
+
+            <div class="mt-4 flex space-x-2">
+                <button type="button" id="addMcqBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full flex items-center focus:outline-none focus:shadow-outline">
+                    <i class="iconify text-lg mr-2" data-icon="ic:twotone-radio-button-checked"></i>
+                    Add MCQ
+                </button>
+
+                <button type="button" id="addOpenEndedBtn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full flex items-center focus:outline-none focus:shadow-outline">
+                    <i class="iconify text-lg mr-2" data-icon="ic:twotone-edit"></i>
+                    Add Theory
+                </button>
+            </div>
+
+            <hr class="my-3">
+
+            <!-- Removed hidden input; we will send the JSON directly in the fetch request -->
+            <div class="mt-1">
+                <button type="button" id="submitQuizBtn" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full flex items-center focus:outline-none focus:shadow-outline">
+                    <i class="iconify text-lg mr-2" data-icon="ic:twotone-quiz"></i>
+                    Create Quiz
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Existing Quizzes Section -->
+    <div>
+        <h2 class="text-2xl font-semibold mb-4">Existing Quizzes</h2>
+        {% if quizzes %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for quiz in quizzes %}
+            <div class="bg-white p-4 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold mb-2">{{ quiz.title }}</h3>
+                <p class="text-gray-600">Quiz ID: {{ quiz.id }}</p>
+                <div class="mt-4 flex flex-col space-y-2">
+                    <a href="{{ url_for('main.preview_quiz', quiz_id=quiz.id) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full flex items-center justify-center">
+                        <i class="iconify text-lg mr-2" data-icon="ic:twotone-remove-red-eye"></i>
+                        Preview
+                    </a>
+                    <hr class="my-3">
+                    <a href="{{ url_for('main.view_quiz_submissions', quiz_id=quiz.id) }}" class="bg-purple-500 hover:bg-purple-700 text-white rounded-full py-2 px-4 flex items-center justify-center">
+                        <i class="iconify text-lg mr-2" data-icon="ic:twotone-assignment"></i>
+                        View Submissions
+                    </a>
+                    <hr class="my-3">
+                    <form method="POST" action="{{ url_for('main.delete_quiz', quiz_id=quiz.id) }}" class="mt-2" onsubmit="return confirm('Are you sure you want to delete this quiz? This will also delete all student submissions for it.');">
+                        <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full flex items-center justify-center">
+                            <i class="iconify text-lg mr-2" data-icon="ic:twotone-delete"></i>
+                            Delete
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-700">No quizzes have been created for this course yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.tiny.cloud/1/4um2cjxhribn8kvplgsw1nwx5fvhbi3vydpk5nthap59vjlo/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const questionsContainer = document.getElementById('questionsContainer');
+        const addMcqBtn = document.getElementById('addMcqBtn');
+        const addOpenEndedBtn = document.getElementById('addOpenEndedBtn');
+        const submitQuizBtn = document.getElementById('submitQuizBtn');
+        const quizTitleInput = document.getElementById('quiz_title');
+
+        let questionCount = 0;
+
+        const tinymceConfig = {
+            selector: '',
+            plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak code codesample emoticons media searchreplace table visualblocks wordcount',
+            toolbar_mode: 'floating',
+            toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help | link image media code',
+            height: 200,
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+            
+            images_upload_url: "{{ url_for('main.upload_quiz_file') }}",
+            media_upload_url: "{{ url_for('main.upload_quiz_file') }}",
+            automatic_uploads: true,
+
+            file_picker_callback: function (callback, value, meta) {
+                let input = document.createElement('input');
+                input.setAttribute('type', 'file');
+                
+                if (meta.filetype === 'image') {
+                    input.setAttribute('accept', 'image/*');
+                } else if (meta.filetype === 'media') {
+                    input.setAttribute('accept', 'video/*');
+                }
+
+                input.onchange = function () {
+                    let file = this.files[0];
+                    let formData = new FormData();
+                    formData.append('file', file, file.name);
+
+                    fetch("{{ url_for('main.upload_quiz_file') }}", {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => {
+                        if (!response.ok) {
+                            throw new Error('HTTP Error: ' + response.status);
+                        }
+                        return response.json();
+                    }).then(data => {
+                        if (data.error) {
+                            alert('Error uploading file: ' + data.error);
+                            return;
+                        }
+                        callback(data.location, { poster: data.poster });
+                    }).catch(error => {
+                        alert('File upload failed: ' + error.message);
+                    });
+                };
+                input.click();
+            },
+            
+            images_upload_handler: function (blobInfo, progress) {
+                return new Promise((resolve, reject) => {
+                    const formData = new FormData();
+                    formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                    fetch("{{ url_for('main.upload_quiz_file') }}", {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => {
+                        if (!response.ok) {
+                            throw new Error('HTTP Error: ' + response.status);
+                        }
+                        return response.json();
+                    }).then(data => {
+                        if (data.error) {
+                            reject('Error: ' + data.error);
+                            return;
+                        }
+                        resolve(data.location);
+                    }).catch(error => {
+                        reject('Image upload failed: ' + error.message);
+                    });
+                });
+            }
+        };
+
+        function addMcqQuestion() {
+            const questionId = questionCount++;
+            const questionHtml = `
+                <div id="question-${questionId}" class="bg-white p-4 rounded-lg shadow-inner border border-gray-200" data-type="mcq">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-semibold text-lg">Question ${questionId + 1} (MCQ)</h4>
+                        <button type="button" onclick="removeQuestion(${questionId})" class="text-red-500 hover:text-red-700">
+                            Remove
+                        </button>
+                    </div>
+                    <div class="mb-2">
+                        <label for="question-${questionId}-text" class="block text-gray-700">Question Text</label>
+                        <textarea id="question-${questionId}-text" name="question-text-${questionId}" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label for="question-${questionId}-points" class="block text-gray-700">Points</label>
+                        <input type="number" id="question-${questionId}-points" name="question-points-${questionId}" min="1" value="1"
+                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div class="options-container space-y-2">
+                        <label class="block text-gray-700">Options</label>
+                        <div class="flex items-center space-x-2 option-row">
+                            <input type="radio" name="correct-answer-${questionId}" value="0" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" required>
+                            <input type="text" name="option-text-${questionId}-0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                            <button type="button" onclick="removeOption(this)" class="text-red-500 hover:text-red-700 text-sm font-bold">X</button>
+                        </div>
+                        <div class="flex items-center space-x-2 option-row">
+                            <input type="radio" name="correct-answer-${questionId}" value="1" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" required>
+                            <input type="text" name="option-text-${questionId}-1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                            <button type="button" onclick="removeOption(this)" class="text-red-500 hover:text-red-700 text-sm font-bold">X</button>
+                        </div>
+                        <button type="button" onclick="addOption(${questionId})" class="mt-2 text-sm text-blue-500 hover:underline">Add another option</button>
+                    </div>
+                </div>
+            `;
+            questionsContainer.insertAdjacentHTML('beforeend', questionHtml);
+            tinymce.init({...tinymceConfig, selector: `#question-${questionId}-text`});
+        }
+
+        function addOpenEndedQuestion() {
+            const questionId = questionCount++;
+            const questionHtml = `
+                <div id="question-${questionId}" class="bg-white p-4 rounded-lg shadow-inner border border-gray-200" data-type="open-ended">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-semibold text-lg">Question ${questionId + 1} (Theory)</h4>
+                        <button type="button" onclick="removeQuestion(${questionId})" class="text-red-500 hover:text-red-700">
+                            Remove
+                        </button>
+                    </div>
+                    <div class="mb-2">
+                        <label for="question-${questionId}-text" class="block text-gray-700">Question Text</label>
+                        <textarea id="question-${questionId}-text" name="question-text-${questionId}" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label for="question-${questionId}-points" class="block text-gray-700">Points</label>
+                        <input type="number" id="question-${questionId}-points" name="question-points-${questionId}" min="1" value="1"
+                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="question-${questionId}-answer" class="block text-gray-700">Correct Answer</label>
+                        <input type="text" id="question-${questionId}-answer" name="question-answer-${questionId}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                </div>
+            `;
+            questionsContainer.insertAdjacentHTML('beforeend', questionHtml);
+            tinymce.init({...tinymceConfig, selector: `#question-${questionId}-text`});
+        }
+        
+        window.removeQuestion = function(id) {
+            const editorInstance = tinymce.get(`question-${id}-text`);
+            if (editorInstance) {
+                editorInstance.remove();
+            }
+
+            const questionElement = document.getElementById(`question-${id}`);
+            if (questionElement) {
+                questionElement.remove();
+            }
+        };
+
+        window.addOption = function(questionId) {
+            const optionsContainer = document.querySelector(`#question-${questionId} .options-container`);
+            const optionCount = optionsContainer.querySelectorAll('.option-row').length;
+            
+            const newOptionHtml = `
+                <div class="flex items-center space-x-2 option-row">
+                    <input type="radio" name="correct-answer-${questionId}" value="${optionCount}" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" required>
+                    <input type="text" name="option-text-${questionId}-${optionCount}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    <button type="button" onclick="removeOption(this)" class="text-red-500 hover:text-red-700 text-sm font-bold">X</button>
+                </div>
+            `;
+            optionsContainer.querySelector('button.mt-2').insertAdjacentHTML('beforebegin', newOptionHtml);
+        };
+
+        window.removeOption = function(button) {
+            const optionRow = button.closest('.option-row');
+            if (optionRow) {
+                optionRow.remove();
+            }
+        };
+        
+        addMcqBtn.addEventListener('click', addMcqQuestion);
+        addOpenEndedBtn.addEventListener('click', addOpenEndedQuestion);
+
+        submitQuizBtn.addEventListener('click', async function(event) {
+            // First, validate the form data
+            const quizTitle = quizTitleInput.value.trim();
+            if (!quizTitle) {
+                alert("Please provide a quiz title.");
+                return;
+            }
+
+            const questions = [];
+            const questionElements = questionsContainer.querySelectorAll('.bg-white.p-4.rounded-lg');
+            
+            if (questionElements.length === 0) {
+                alert("Please add at least one question to the quiz.");
+                return;
+            }
+
+            questionElements.forEach((element, index) => {
+                const questionType = element.dataset.type;
+                
+                const questionEditor = tinymce.get(`question-${index}-text`);
+                const questionText = questionEditor ? questionEditor.getContent() : element.querySelector(`[name="question-text-${index}"]`).value;
+                const points = parseInt(element.querySelector(`[name="question-points-${index}"]`).value, 10);
+                
+                if (questionType === 'mcq') {
+                    const options = [];
+                    const optionInputs = element.querySelectorAll(`.option-row input[name^="option-text-${index}"]`);
+                    optionInputs.forEach(input => {
+                        options.push(input.value);
+                    });
+
+                    const selectedOption = element.querySelector(`input[name="correct-answer-${index}"]:checked`);
+                    if (!selectedOption) {
+                        alert(`Please select a correct answer for question ${index + 1}.`);
+                        // This is a simple alert; for a real app, you'd want a more robust way to stop submission
+                        throw new Error("Validation failed.");
+                    }
+                    const correctAnswer = options[parseInt(selectedOption.value)];
+
+                    questions.push({
+                        type: 'multiple_choice',
+                        question: questionText,
+                        options: options,
+                        answer: correctAnswer,
+                        points: points
+                    });
+                } else if (questionType === 'open-ended') {
+                    const correctAnswer = element.querySelector(`input[name="question-answer-${index}"]`).value;
+                    questions.push({
+                        type: 'open_ended',
+                        question: questionText,
+                        answer: correctAnswer,
+                        points: points
+                    });
+                }
+            });
+
+            const formData = new FormData();
+            formData.append('quiz_title', quizTitle);
+            formData.append('questions_json', JSON.stringify(questions));
+
+            try {
+                const response = await fetch("{{ url_for('main.manage_quizzes', course_id=course.id) }}", {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else if (response.ok) {
+                    // Assuming the server returns a success message or JSON
+                    const result = await response.json();
+                    alert("Quiz created successfully!");
+                    // You might want to redirect here too
+                    window.location.reload();
+                } else {
+                    const error = await response.text();
+                    alert("An error occurred: " + error);
+                }
+
+            } catch (error) {
+                console.error('Submission failed:', error);
+                alert("Failed to submit the quiz. Please try again.");
+            }
+        });
+
+        addMcqQuestion();
+    });
+</script>
+
+{% endblock %}
+

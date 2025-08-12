@@ -1,0 +1,19 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-xl">
+        <a href="{{ url_for('main.calendar') }}" class="inline-block text-blue-600 hover:text-blue-800 mb-4">
+            &larr; Back to Calendar
+        </a>
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">{{ announcement.title }}</h1>
+        <p class="text-sm text-gray-500 mb-6">
+            Published by {{ announcement.author.username }} ({{ announcement.author.role }}) on {{ announcement.created_at.strftime('%B %d, %Y at %H:%M') }}
+        </p>
+        <hr class="mb-6">
+        <div class="prose max-w-none">
+            <p>{{ announcement.content }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

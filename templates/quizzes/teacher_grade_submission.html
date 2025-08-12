@@ -1,0 +1,86 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <a href="{{ url_for('main.view_quiz_submissions', quiz_id=submission.quiz.id) }}" class="text-blue-500 hover:text-2xl mb-6 inline-block flex items-center">
+        <i class="iconify text-[#1a47ef] text-3xl" data-icon="ic:twotone-logout"></i>
+            Back to Submissions
+    </a>
+    <h1 class="text-2xl font-bold mb-2 text-center">Grade Submission</h1>
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4 bg-gray-50">
+        <h2 class="text-lg text-gray-600 mb-4"><span class="font-semibold">Quiz:</span> {{ submission.quiz.title }}</h2>
+        <p class="text-lg text-gray-600 mb-4"><span class="font-semibold">Submitted By:</span> {{ submission.student.username }}</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('main.teacher_grade_submission', submission_id=submission.id) }}">
+        <div class="space-y-4">
+            <div class="bg-white p-4 rounded-lg shadow-md border-b-4 border-blue-400">
+                <p class="text-xl font-bold text-gray-700">
+                    MCQ Score: <span class="text-green-600">{{ submission.score }} points</span>
+                </p>
+                <p class="text-sm text-gray-500 mt-1">
+                    Note: MCQs are automatically Graded
+                </p>
+            </div>
+
+            {% for answer in submitted_answers %}
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <!-- Use | safe to render HTML content -->
+                <h3 class="text-lg font-bold mb-2">Q{{ loop.index }}. {{ answer.question | safe }} <span class="text-sm font-normal text-gray-500">({{ answer.points }} points)</span></h3>
+
+                <div class="p-4 rounded-md mt-4 {% if answer.type == 'multiple_choice' %}bg-green-100{% else %}bg-purple-100{% endif %}">
+                    <p class="font-semibold">Student Answer:</p>
+                    <!-- Use | safe to render HTML content -->
+                    <p class="mt-1 pl-4">{{ answer.submitted_answer | safe }}</p>
+
+                    {% if answer.type == 'multiple_choice' %}
+                        <div class="mt-2 p-4">
+                            <p class="font-semibold mt-4">Correct Answer:</p>
+                            <p class="mt-1 pl-4 text-gray-800 list-disc">{{ answer.correct_answer }}</p>
+                            <p class="font-bold mt-4 text-green-600">Awarded Points: {{ answer.points if answer.is_correct else 0 }}</p>
+                        </div>
+                    {% elif answer.type == 'open_ended' %}
+                        <p class="font-semibold mt-4 text-purple-700">Teacher Grading:</p>
+                        <div class="mt-2 p-4">
+                            <label for="awarded_points_{{ loop.index0 }}" class="block text-sm font-medium text-gray-700">Awarded Points:</label>
+                            <input type="number"
+                                    id="awarded_points_{{ loop.index0 }}"
+                                    name="awarded_points_{{ loop.index0 }}"
+                                    value="{{ answer.awarded_points or 0 }}"
+                                    min="0"
+                                    max="{{ answer.points }}"
+                                    class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm grade-input"
+                                    data-max="{{ answer.points }}">
+                            <p class="text-xs text-gray-500 mt-1">Max points: {{ answer.points }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-4 text-center">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full focus:outline-none focus:shadow-outline text-lg">
+                Submit Grade
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".grade-input").forEach(input => {
+        input.addEventListener("input", function() {
+            let maxVal = parseInt(this.dataset.max) || 0;
+            let val = parseInt(this.value) || 0;
+
+            if (val < 0) {
+                this.value = 0; // No negatives
+            }
+            else if (val > maxVal) {
+                this.value = maxVal; // Cap at max points
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

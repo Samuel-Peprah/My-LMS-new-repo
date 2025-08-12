@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@iconify/iconify@1.14.2/dist/iconify.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@iconify/iconify@1.14.2/dist/iconify.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@iconify/tailwind@1.0.0/dist/iconify-tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/fontawesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/solid.min.css">
+</head>
+<body class="h-screen bg-gray-800 p-4 text-white shadow-md">
+    <div class="flex flex-col justify-center items-center h-screen">
+        <i class="iconify text-9xl text-blue-600 animate-pulse" data-icon="ic:twotone-school"></i>
+        <h1 class="text-4xl font-bold text-blue-600 animate-bounce">My LMS</h1>
+
+        {% if load_type == 'login' %}
+            <h1 class="text-2xl font-light font-sans text-blue-400 animate-fade-in">
+                Welcome, {{ current_user.username }}!
+            </h1>
+        {% elif load_type == 'logout' %}
+            <h1 class="text-2xl font-light font-sans text-red-400 animate-fade-out">
+                Goodbye, {{ username }}!
+            </h1>
+        {% endif %}
+    </div>
+    <script>
+        setTimeout(function() {
+            window.location.href = "{{ url_for('main.index') }}";
+        }, 3000); // 3 seconds
+    </script>
+
+    <script src="https://code.iconify.design/1/1.0.7/iconify.min.js"></script>
+</body>
+</html>

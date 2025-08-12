@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Progress Report - {{ current_user.username }}</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        h1 { text-align: center; color: #333; }
+        .course-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .course-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #555;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 5px; }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .summary-item {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .grade-good { color: green; font-weight: bold; }
+        .grade-pending { color: orange; font-weight: bold; }
+        .grade-bad { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Student Progress Report</h1>
+    <p>Report for: <strong>{{ current_user.username }}</strong></p>
+    <hr>
+    
+    {% for data in dashboard_data %}
+        <div class="course-card">
+            <div class="course-title">{{ data.course.title }}</div>
+            
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div style="font-size: 2em;">{{ data.total_lessons }}</div>
+                    <div>Total Lessons</div>
+                </div>
+                <div class="summary-item">
+                    <div style="font-size: 2em;">{{ data.discussion_posts }}</div>
+                    <div>Discussion Posts</div>
+                </div>
+                <div class="summary-item">
+                    <div style="font-size: 2em;">{{ data.discussion_replies }}</div>
+                    <div>Discussion Replies</div>
+                </div>
+            </div>
+
+            <div class="section-title">Assignments</div>
+            {% if data.assignments %}
+                <ul>
+                    {% for assignment_data in data.assignments %}
+                        <li>
+                            <span>{{ assignment_data.assignment.title }}</span>: 
+                            {% if assignment_data.status == 'Graded' %}
+                                <span class="grade-good">Grade: {{ assignment_data.submission.grade if assignment_data.submission.grade is not none else 'N/A' }}%</span>
+                            {% elif assignment_data.status == 'Submitted' %}
+                                <span class="grade-pending">Status: Submitted (Awaiting Grade)</span>
+                            {% else %}
+                                <span class="grade-bad">Status: Not Submitted</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No assignments found for this course.</p>
+            {% endif %}
+
+            <div class="section-title">Quizzes</div>
+            {% if data.quizzes %}
+                <ul>
+                    {% for quiz_data in data.quizzes %}
+                        <li>
+                            <span>{{ quiz_data.quiz.title }}</span>: 
+                            {% if quiz_data.status == 'Graded' %}
+                                <span class="grade-good">Score: {{ quiz_data.submission.score }}</span>
+                            {% elif quiz_data.status == 'Submitted' %}
+                                <span class="grade-pending">Status: Submitted (Awaiting Grade)</span>
+                            {% else %}
+                                <span class="grade-bad">Status: Not Attempted</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No quizzes found for this course.</p>
+            {% endif %}
+
+        </div>
+    {% endfor %}
+</body>
+</html>

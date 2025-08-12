@@ -1,0 +1,59 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <a href="{{ url_for('main.view_quiz_submissions', quiz_id=submission.quiz.id) }}" class="text-blue-500 hover:text-2xl mb-6 inline-block flex items-center">
+        <i class="iconify text-[#1a47ef] text-3xl" data-icon="ic:twotone-logout"></i>
+            Back to Submissions
+    </a>
+    <h1 class="text-3xl font-bold mb-4 font-sans text-center">Student Results</h1>
+
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4 bg-gray-50">
+        <h2 class="text-lg font-semibold">Student: <span class="font-normal"> {{ submission.student.username }}</span></h2>
+        <h2 class="text-lg font-semibold">Quiz: <span class="font-normal"> {{ submission.quiz.title }}</span></h2>
+        <p class="text-lg font-bold mt-4">Final Score: <span class="text-green-600"> {{ submission.score }}</span> / <span class="text-gray-700">{{ total_possible_score }}</span></p>
+        <p class="text-lg font-bold mt-4">Percentage: <span class="text-green-600">{{ (submission.score / total_possible_score * 100) | round(2) }}%</span></p>
+    </div>
+
+    <div class="space-y-4">
+        {% for answer in submitted_answers %}
+        {% set question_number = loop.index %}
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+            <!-- Added | safe to the question text -->
+            <h3 class="text-lg font-bold mb-2">{{ question_number }}. {{ answer.question | safe }} <span class="text-sm font-normal text-gray-500">({{ answer.points }} points)</span></h3>
+
+            <div class="mt-4 p-4 rounded-md {% if answer.is_correct %}bg-green-100{% elif answer.type == 'open_ended' %}bg-blue-100{% else %}bg-red-100{% endif %}">
+                {% if answer.type == 'multiple_choice' %}
+                <p class="font-semibold">Student's Answer:</p>
+                <p class="mt-1 pl-4">{{ answer.submitted_answer }}</p>
+                
+                <p class="font-semibold mt-4">Correct Answer:</p>
+                <p class="mt-1 pl-4">{{ answer.correct_answer }}</p>
+                {% elif answer.type == 'open_ended' %}
+                <p class="font-semibold">Student's Answer:</p>
+                <!-- Added | safe to the submitted answer text -->
+                <p class="mt-1 pl-4">{{ answer.submitted_answer | safe }}</p>
+                    {% if submission.is_graded %}
+                    <p class="font-semibold mt-4">Teacher Awarded Grade:</p>
+                    <p class="mt-1 pl-4 text-purple-600">{{ answer.awarded_points }} / {{ answer.points }}</p>
+                    {% else %}
+                    <p class="font-semibold mt-4 text-gray-500">Awaiting Grade...</p>
+                    {% endif %}
+                {% endif %}
+                {% if answer.type == 'multiple_choice' %}
+                <p class="mt-4 text-lg font-bold {% if answer.is_correct %}text-green-600{% else %}text-red-600{% endif %}">
+                    {% if answer.is_correct %}
+                    <p class="mt-4 text-green-600 font-bold">Correct | {{ answer.points }} points</p>
+                    {% else %}
+                    <p class="mt-4 text-red-600 font-bold">Incorrect | N/A</p>
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <!-- Back to Dashboard -->
+    <a href="{{ url_for('main.student_dashboard') }}"
+        class="text-blue-500 hover:text-2xl mb-6 inline-block flex items-center">
+        <i class="iconify text-[#1a47ef] text-3xl" data-icon="ic:twotone-logout"></i>
+        <span class="ml-2">Back to Dashboard</span>
+    </a>
+
+    <!-- Quiz & Course Info -->
+    <div class="bg-gray-100 rounded-lg border border-gray-200 p-6 mb-6 shadow-md">
+        <h1 class="text-2xl font-bold mb-2">Quiz Results for {{ submission.quiz.title }}</h1>
+        <h2 class="text-xl text-gray-600 mb-4">Course: {{ submission.quiz.course.title }}</h2>
+    </div>
+
+    <!-- Score Display -->
+    {% if submission.is_graded %}
+        <div class="bg-gray-600 p-4 rounded-lg shadow-md mb-4">
+            <p class="py-3 px-6 font-semibold
+                {% if submission.score <= total_possible_score / 3 %}
+                    text-red-600
+                {% elif submission.score <= (total_possible_score * 2 / 3) %}
+                    text-yellow-600
+                {% else %}
+                    text-green-600
+                {% endif %}
+            ">
+                Final Score: {{ submission.score }} / {{ total_possible_score }}
+            </p>
+        </div>
+    {% else %}
+        <div class="bg-gray-600 p-4 rounded-lg shadow-md mb-4">
+            <p class="text-2xl font-bold
+                {% if submission.score <= total_possible_score_mcq / 3 %}
+                    text-red-600
+                {% elif submission.score <= (total_possible_score_mcq * 2 / 3) %}
+                    text-yellow-500
+                {% else %}
+                    text-green-600
+                {% endif %}
+            ">
+                Current Score: {{ submission.score }} / {{ total_possible_score_mcq }} (MCQ Only)
+            </p>
+            <p class="mt-2 text-xl text-yellow-700">
+                Open-ended questions are awaiting teacher review.
+            </p>
+        </div>
+    {% endif %}
+
+    <!-- Submitted Answers -->
+    <div class="space-y-4">
+        {% for answer in submitted_answers %}
+            <div class="bg-white p-4 rounded-lg shadow-md">
+                <!-- Question -->
+                <div class="flex items-center space-x-4 mb-4">
+                    <span class="text-2xl font-bold text-gray-700">Q{{ loop.index }}.</span>
+                    <p class="text-xl font-medium">{{ answer.question | safe }}</p>
+                </div>
+                
+                <!-- Your Answer -->
+                <div class="ml-10">
+                    <p class="text-gray-800 font-semibold">Your Answer:</p>
+                    <p class="mt-1 text-lg pl-4">
+                        {{ answer.submitted_answer | safe }}
+                    </p>
+                </div>
+                
+                <!-- Result or Teacher Grade -->
+                {% if answer.type == 'multiple_choice' %}
+                    <div class="mt-4 ml-10">
+                        <p class="text-gray-800 font-semibold">Result:</p>
+                        <p class="mt-1 text-lg pl-4 text-gray-600 border-b-2 border-gray-400
+                            {% if answer.is_correct %}text-green-600{% else %}text-red-600{% endif %}
+                        ">
+                            {% if answer.is_correct %}
+                                Correct! (+{{ answer.points }} pts)
+                            {% else %}
+                                Incorrect! (0 pts). Correct Answer: "{{ answer.correct_answer }}"
+                            {% endif %}
+                        </p>
+                    </div>
+                {% else %}
+                    <div class="mt-4 ml-10">
+                        <p class="text-gray-800 font-semibold">Teacher Awarded Grade:</p>
+                        <p class="mt-1 text-lg pl-4 text-gray-600 border-b-2 border-gray-400
+                            {% if submission.is_graded %}
+                                {% if answer.awarded_points <= answer.points / 3 %}
+                                    text-red-600
+                                {% elif answer.awarded_points <= (answer.points * 2 / 3) %}
+                                    text-yellow-500
+                                {% else %}
+                                    text-green-600
+                                {% endif %}
+                            {% else %}
+                                text-yellow-600
+                            {% endif %}">
+                        {% if submission.is_graded %}
+                            {{ answer.awarded_points }} / {{ answer.points }} (pts)
+                            {% else %}
+                                Awaiting Grade...
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
